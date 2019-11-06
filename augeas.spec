@@ -1,12 +1,12 @@
-Name:               augeas	
+Name:               augeas
 Version:            1.12.0
-Release:            1
+Release:            2
 Summary:            Augeas is a configuration editing tool for changing configuration files
 License:            LGPLv2+
 URL:                https://augeas.net/
 Source0:            https://download.augeas.net/%{name}-%{version}.tar.gz
 
-BuildRequires:      gcc libselinux-devel libxml2-devel readline-devel	
+BuildRequires:      gcc libselinux-devel libxml2-devel readline-devel
 Provides:           bundled(gnulib) augeas-libs = %{version}-%{release}
 Obsoletes:          augeas-libs = %{version}-%{release}
 
@@ -54,7 +54,8 @@ make check
 
 %files
 %defattr(-,root,root)
-%doc AUTHORS COPYING
+%license COPYING
+%doc AUTHORS
 %{_bindir}/au*
 %{_bindir}/fadot
 %{_libdir}/lib*.so.*
@@ -76,12 +77,18 @@ make check
 %doc %{_mandir}/man1/au*.1.gz
 
 %changelog
+* Mon Oct 21 2019 openEuler Buildteam <buildteam@openeuler.org> - 1.12.0-2
+- Type:enhancement
+- Id:NA
+- SUG:NA
+- DESC:modify the location of COPYING
+
 * Mon Sep 9 2019 openEuler Buildteam <buildteam@openeuler.org> - 1.12.0-1
 - Type:enhancement
 - Id:NA
 - SUG:NA
-- DESC:Reduce the amount of memory needed to evaluate complex path expressions 
-  against large files,Fix a segfault on OSX when 'augmatch' is run without any 
+- DESC:Reduce the amount of memory needed to evaluate complex path expressions
+  against large files,Fix a segfault on OSX when 'augmatch' is run without any
   arguments (Issue #556),update gnulib to 91584ed6.
 
 * Thu Aug 15 2019 openEuler Buildteam <buildteam@openeuler.org> - 1.10.1-4
