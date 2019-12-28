@@ -1,6 +1,6 @@
 Name:               augeas
 Version:            1.12.0
-Release:            3
+Release:            4
 Summary:            Augeas is a configuration editing tool for changing configuration files
 License:            LGPLv2+
 URL:                https://augeas.net/
@@ -9,7 +9,7 @@ Source0:            https://download.augeas.net/%{name}-%{version}.tar.gz
 BuildRequires:      gcc libselinux-devel libxml2-devel readline-devel
 Provides:           bundled(gnulib)
 Provides:           augeas-libs = %{version}-%{release} augeas-libs%{?_isa} = %{version}-%{release}
-Obsoletes:          augeas-libs = %{version}-%{release}
+Obsoletes:          augeas-libs < %{version}-%{release}
 
 %description
 Augeas is a configuration editing tool. It parses configuration files in their native
@@ -78,6 +78,12 @@ make check
 %doc %{_mandir}/man1/au*.1.gz
 
 %changelog
+* Wed Dec 25 2019 openEuler Buildteam <buildteam@openeuler.org> - 1.12.0-4
+- Type:bugfix
+- ID:NA
+- SUG:NA
+- DESC:modify the obsoletes
+
 * Fri Dec 13 2019 openEuler Buildteam <buildteam@openeuler.org> - 1.12.0-3
 - Type:enhancement
 - Id:NA
