@@ -1,0 +1,26 @@
+From c13c26f415405e3203d91f601409497f8aa930dd Mon Sep 17 00:00:00 2001
+From: chengguipeng <chengguipeng1@huawei.com>
+Date: Thu, 3 Sep 2020 16:54:34 +0800
+Subject: [PATCH] 2
+Avoid NULL pointer dereference in function re_case_expand. 
+Because parse_regexp() will return NULL pointer when the input parameter is abnomal.
+---
+ src/fa.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/fa.c b/src/fa.c
+index 8e1d7d4..7935041 100644
+--- a/src/fa.c
++++ b/src/fa.c
+@@ -4447,7 +4447,7 @@ int fa_expand_nocase(const char *regexp, size_t regexp_len,
+     parse.rend = regexp + regexp_len;
+     parse.error = REG_NOERROR;
+     re = parse_regexp(&parse);
+-    if (parse.error != REG_NOERROR)
++    if (re == NULL)
+         return parse.error;
+ 
+     r = re_case_expand(re);
+-- 
+1.8.3.1
+
