@@ -1,10 +1,10 @@
 Name:               augeas
 Version:            1.12.0
-Release:            5
+Release:            6
 Summary:            Augeas is a configuration editing tool for changing configuration files
 License:            LGPLv2+
 URL:                https://augeas.net/
-Source0:            https://download.augeas.net/%{name}-%{version}.tar.gz
+Source0:            http://download.augeas.net/%{name}-%{version}.tar.gz
 
 BuildRequires:      gcc libselinux-devel libxml2-devel readline-devel
 Provides:           bundled(gnulib)
@@ -80,6 +80,12 @@ make check
 %doc %{_mandir}/man1/au*.1.gz
 
 %changelog
+* Tue Sep 16 2020 chengguipeng<chengguipeng1@huawei.com> - 1.12.0-6
+- Type:bugfix
+- ID:NA
+- SUG:NA
+- DESC:modify source0 url.
+
 * Tue Sep 8 2020 chengguipeng<chengguipeng1@huawei.com> - 1.12.0-5
 - Type:bugfix
 - ID:NA
