@@ -1,6 +1,6 @@
 Name:               augeas
 Version:            1.12.0
-Release:            5
+Release:            6
 Summary:            Augeas is a configuration editing tool for changing configuration files
 License:            LGPLv2+
 URL:                https://augeas.net/
@@ -45,7 +45,7 @@ Provide header files and libraries for the use of building a extension library f
 %check
 export SKIP_TEST_PRESERVE_SELINUX=1
 %ifarch aarch64
-sed -i 's/^CFLAGS/s/$/ -fsigned-char/g' ./gnulib/tests/Makefile
+sed -i '/^CFLAGS/s/$/ -fsigned-char/g' ./gnulib/tests/Makefile
 %endif
 make check
 
@@ -81,6 +81,12 @@ make check
 %doc %{_mandir}/man1/au*.1.gz
 
 %changelog
+* Tue Mar 18 2021 chengguipeng <chengguipeng1@huawei.com> - 1.12.0-6
+- Type:bugfix
+- ID:NA
+- SUG:NA
+- DESC:fix the last PR error
+
 * Wed Mar 17 2021 chengguipeng <chengguipeng1@huawei.com> - 1.12.0-5
 - Type:bugfix
 - ID:NA
