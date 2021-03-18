@@ -1,6 +1,6 @@
 Name:               augeas
 Version:            1.12.0
-Release:            7
+Release:            6
 Summary:            Augeas is a configuration editing tool for changing configuration files
 License:            LGPLv2+
 URL:                https://augeas.net/
@@ -83,17 +83,11 @@ make check
 %doc %{_mandir}/man1/au*.1.gz
 
 %changelog
-* Tue Mar 18 2021 chengguipeng <chengguipeng1@huawei.com> - 1.12.0-7
+* Tue Mar 18 2021 chengguipeng <chengguipeng1@huawei.com> - 1.12.0-6
 - Type:bugfix
 - ID:NA
 - SUG:NA
 - DESC:fix the test-localeconv failed on aarch
-
-* Tue Sep 16 2020 chengguipeng<chengguipeng1@huawei.com> - 1.12.0-6
-- Type:bugfix
-- ID:NA
-- SUG:NA
-- DESC:modify source0 url.
 
 * Tue Sep 8 2020 chengguipeng<chengguipeng1@huawei.com> - 1.12.0-5
 - Type:bugfix
