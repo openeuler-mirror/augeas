@@ -1,12 +1,13 @@
 Name:               augeas
-Version:            1.12.0
-Release:            7
+Version:            1.13.0
+Release:            1
 Summary:            Augeas is a configuration editing tool for changing configuration files
 License:            LGPLv2+
 URL:                https://augeas.net/
-Source0:            http://download.augeas.net/%{name}-%{version}.tar.gz
+Source0:            https://github.com/hercules-team/augeas/archive/refs/tags/release-%{version}.tar.gz#/%{name}-%{version}.tar.gz
 
-BuildRequires:      gcc libselinux-devel libxml2-devel readline-devel
+BuildRequires:      gcc libselinux-devel libxml2-devel readline-devel 
+BuildRequires:      autoconf automake libtool git gnulib flex
 Provides:           bundled(gnulib)
 Provides:           augeas-libs = %{version}-%{release} augeas-libs%{?_isa} = %{version}-%{release}
 Obsoletes:          augeas-libs < %{version}-%{release}
@@ -37,10 +38,12 @@ Provide header files and libraries for the use of building a extension library f
 %package_help
 
 %prep
-%autosetup -n %{name}-%{version} -p1
+%autosetup -n %{name}-release-%{version} -p1
 
 %build
-
+git init
+cp /usr/bin/gnulib-tool %{_builddir}/%{name}-release-%{version}/.gnulib
+./autogen.sh
 %configure
 %make_build
 
@@ -83,6 +86,9 @@ make check
 %doc %{_mandir}/man1/au*.1.gz
 
 %changelog
+* Fri Dec 03 2021 wangkerong <wangkerong@huawei.com> - 1.13.0-1
+- update to 1.13.0
+
 * Tue Mar 18 2021 chengguipeng <chengguipeng1@huawei.com> - 1.12.0-7
 - Type:bugfix
 - ID:NA
