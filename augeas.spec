@@ -1,12 +1,16 @@
 Name:               augeas
 Version:            1.12.0
-Release:            7
+Release:            8
 Summary:            Augeas is a configuration editing tool for changing configuration files
 License:            LGPLv2+
 URL:                https://augeas.net/
 Source0:            http://download.augeas.net/%{name}-%{version}.tar.gz
 
 BuildRequires:      gcc libselinux-devel libxml2-devel readline-devel
+%ifarch riscv64
+BuildRequires:      gcc_secure
+%endif
+
 Provides:           bundled(gnulib)
 Provides:           augeas-libs = %{version}-%{release} augeas-libs%{?_isa} = %{version}-%{release}
 Obsoletes:          augeas-libs < %{version}-%{release}
@@ -83,6 +87,12 @@ make check
 %doc %{_mandir}/man1/au*.1.gz
 
 %changelog
+* Tue Dec 2 2021 lvxiaoqian <xiaoqian@nj.iscas.ac.cn> - 1.12.0-8
+- Type:bugfix
+- ID:NA
+- SUG:NA
+- DESC:add gcc_secure in BuildRequires for riscv
+
 * Tue Mar 18 2021 chengguipeng <chengguipeng1@huawei.com> - 1.12.0-7
 - Type:bugfix
 - ID:NA
