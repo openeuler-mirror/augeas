@@ -1,6 +1,6 @@
 Name:               augeas
 Version:            1.13.0
-Release:            1
+Release:            2
 Summary:            Augeas is a configuration editing tool for changing configuration files
 License:            LGPLv2+
 URL:                https://augeas.net/
@@ -45,7 +45,7 @@ git init
 cp /usr/bin/gnulib-tool %{_builddir}/%{name}-release-%{version}/.gnulib
 ./autogen.sh
 %configure
-%make_build
+%make_build -j1
 
 %check
 export SKIP_TEST_PRESERVE_SELINUX=1
@@ -86,6 +86,9 @@ make check
 %doc %{_mandir}/man1/au*.1.gz
 
 %changelog
+* Wed Jan 12 2022 wangkerong <wangkerong@huawei.com> - 1.13.0-2
+- Use single-threaded compilation to fix build failures
+
 * Fri Dec 03 2021 wangkerong <wangkerong@huawei.com> - 1.13.0-1
 - update to 1.13.0
 
