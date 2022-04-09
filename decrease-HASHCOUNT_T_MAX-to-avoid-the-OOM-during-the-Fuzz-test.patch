@@ -1,0 +1,27 @@
+From 31603e0a701dc198eb459093eb0a08751a3d0b95 Mon Sep 17 00:00:00 2001
+From: chengguipeng <chengguipeng1@huawei.com>
+Date: Fri, 18 Dec 2020 12:41:03 +0800
+Subject: [PATCH] Decrease the value of HASHCOUNT_T_MAX to avoid the OOM during the Fuzz test
+
+https://github.com/hercules-team/augeas/commit/31603e0a701dc198eb459093eb0a08751a3d0b95
+
+Signed-off-by: MR-sanman <sanman123117@163.com>
+---
+ src/hash.h | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/src/hash.h b/src/hash.h
+index 4b38dff5..3c4f6c34 100644
+--- a/src/hash.h
++++ b/src/hash.h
+@@ -35,7 +35,8 @@ extern "C" {
+ #endif
+ 
+ typedef unsigned long hashcount_t;
+-#define HASHCOUNT_T_MAX ULONG_MAX
++//Decrease the value of HASHCOUNT_T_MAX to avoid the OOM during the Fuzz test
++#define HASHCOUNT_T_MAX 819200
+ 
+ typedef unsigned long hash_val_t;
+ #define HASH_VAL_T_MAX ULONG_MAX
+
