@@ -113,7 +113,7 @@ make check
 * Fri Dec 03 2021 wangkerong <wangkerong@huawei.com> - 1.13.0-1
 - update to 1.13.0
 
-* Tue Mar 18 2021 chengguipeng <chengguipeng1@huawei.com> - 1.12.0-7
+* Thu Mar 18 2021 chengguipeng <chengguipeng1@huawei.com> - 1.12.0-7
 - Type:bugfix
 - ID:NA
 - SUG:NA
