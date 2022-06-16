@@ -1,0 +1,344 @@
+From e01f60bf9dd782e667a4434909aca020b4fd8d7d Mon Sep 17 00:00:00 2001
+From: George Hansper <george-github@hansper.id.au>
+Date: Sat, 2 Oct 2021 06:50:18 +1000
+Subject: [PATCH] Add "else" operator to augeas path-filter expressions
+ (priority selector) (#692)
+
+* Add "else" operator to augeas path-filter expressions (priority selector)
+
+* Add "else" operator to augeas path-filter expressions (priority selector) - expanded to include nodeset expressions
+
+Co-authored-by: George Hansper <george@hansper.id.au>
+
+Conflict:revert this patch
+Reference:https://github.com/hercules-team/augeas/commit/e01f60bf9dd782e667a4434909aca020b4fd8d7d
+---
+ src/pathx.c       | 118 ++--------------------------------------------
+ tests/run.tests   |  30 ------------
+ tests/xpath.tests |  42 -----------------
+ 3 files changed, 5 insertions(+), 185 deletions(-)
+
+diff --git a/src/pathx.c b/src/pathx.c
+index cbbb901..f2f9c09 100644
+--- a/src/pathx.c
++++ b/src/pathx.c
+@@ -86,7 +86,6 @@ enum binary_op {
+     OP_STAR,       /* '*'  */
+     OP_AND,        /* 'and' */
+     OP_OR,         /* 'or' */
+-    OP_ELSE,       /* 'else' */
+     OP_RE_MATCH,   /* '=~' */
+     OP_RE_NOMATCH, /* '!~' */
+     OP_UNION       /* '|' */
+@@ -205,7 +204,6 @@ struct expr {
+             enum binary_op op;
+             struct expr *left;
+             struct expr *right;
+-            bool   left_matched;
+         };
+         value_ind_t      value_ind;    /* E_VALUE */
+         char            *ident;        /* E_VAR */
+@@ -270,10 +268,6 @@ struct state {
+     /* Error structure, used to communicate errors to struct augeas;
+      * we never own this structure, and therefore never free it */
+     struct error        *error;
+-    /* If a filter-expression contains the 'else' operator, we need
+-     * we need to evaluate the filter twice. The has_else flag
+-     * means we don't do this unless we really need to */
+-    bool                 has_else;
+ };
+ 
+ /* We consider NULL and the empty string to be equal */
+@@ -1002,54 +996,6 @@ static void eval_and_or(struct state *state, enum binary_op op) {
+         push_boolean_value(left || right, state);
+ }
+ 
+-static void eval_else(struct state *state, struct expr *expr, struct locpath_trace *lpt_right) {
+-    struct value *r = pop_value(state);
+-    struct value *l = pop_value(state);
+-
+-    if ( l->tag == T_NODESET && r->tag == T_NODESET ) {
+-        int discard_maxns=0;
+-        struct nodeset **discard_ns=NULL;
+-        struct locpath_trace *lpt = state->locpath_trace;
+-        value_ind_t vind = make_value(T_NODESET, state);
+-        if (l->nodeset->used >0 || expr->left_matched) {
+-            expr->left_matched = 1;
+-            state->value_pool[vind].nodeset = clone_nodeset(l->nodeset, state);
+-            if( lpt_right != NULL ) {
+-                discard_maxns = lpt_right->maxns;
+-                discard_ns    = lpt_right->ns;
+-            }
+-        } else {
+-            state->value_pool[vind].nodeset = clone_nodeset(r->nodeset, state);
+-            if( lpt != NULL && lpt_right != NULL ) {
+-                discard_maxns = lpt->maxns;
+-                discard_ns    = lpt->ns;
+-                lpt->maxns = lpt_right->maxns;
+-                lpt->ns    = lpt_right->ns;
+-                lpt->lp    = lpt_right->lp;
+-            }
+-        }
+-        push_value(vind, state);
+-        if ( lpt != NULL && lpt_right != NULL ) {
+-            for (int i=0; i < discard_maxns; i++)
+-                free_nodeset(discard_ns[i]);
+-            FREE(discard_ns);
+-        }
+-    } else {
+-        bool left = coerce_to_bool(l);
+-        bool right = coerce_to_bool(r);
+-
+-        expr->left_matched = expr->left_matched || left;
+-        if (expr->left_matched) {
+-            /* One or more LHS have matched, so we're not interested in the right expr */
+-            push_boolean_value(left, state);
+-        } else {
+-            /* no LHS has matched (yet), so keep the right expr */
+-            /* If this is the 2nd pass, and expr->left_matched is true, no RHS nodes will be included */
+-            push_boolean_value(right, state);
+-        }
+-    }
+-}
+-
+ static bool eval_re_match_str(struct state *state, struct regexp *rx,
+                               const char *str) {
+     int r;
+@@ -1068,12 +1014,11 @@ static bool eval_re_match_str(struct state *state, struct regexp *rx,
+     return r == strlen(str);
+ }
+ 
+-static void eval_union(struct state *state, struct locpath_trace *lpt_right) {
++static void eval_union(struct state *state) {
+     value_ind_t vind = make_value(T_NODESET, state);
+     struct value *r = pop_value(state);
+     struct value *l = pop_value(state);
+     struct nodeset *res = NULL;
+-    struct locpath_trace *lpt = state->locpath_trace;
+ 
+     assert(l->tag == T_NODESET);
+     assert(r->tag == T_NODESET);
+@@ -1089,13 +1034,6 @@ static void eval_union(struct state *state, struct locpath_trace *lpt_right) {
+     }
+     state->value_pool[vind].nodeset = res;
+     push_value(vind, state);
+-
+-    if( lpt != NULL && lpt_right != NULL ) {
+-        STATE_ERROR(state, PATHX_EMMATCH);
+-        for (int i=0; i < lpt_right->maxns; i++)
+-            free_nodeset(lpt_right->ns[i]);
+-        FREE(lpt_right->ns);
+-    }
+  error:
+     ns_clear_added(res);
+ }
+@@ -1158,16 +1096,8 @@ static void eval_re_match(struct state *state, enum binary_op op) {
+ }
+ 
+ static void eval_binary(struct expr *expr, struct state *state) {
+-    struct locpath_trace *lpt = state->locpath_trace;
+-    struct locpath_trace lpt_right;
+-
+     eval_expr(expr->left, state);
+-    if ( lpt != NULL && expr->type == T_NODESET ) {
+-       MEMZERO(&lpt_right, 1);
+-       state->locpath_trace = &lpt_right;
+-    }
+     eval_expr(expr->right, state);
+-    state->locpath_trace = lpt;
+     RET_ON_ERROR;
+ 
+     switch (expr->op) {
+@@ -1205,11 +1135,8 @@ static void eval_binary(struct expr *expr, struct state *state) {
+     case OP_OR:
+         eval_and_or(state, expr->op);
+         break;
+-    case OP_ELSE:
+-        eval_else(state, expr, &lpt_right);
+-        break;
+     case OP_UNION:
+-        eval_union(state, &lpt_right);
++        eval_union(state);
+         break;
+     case OP_RE_MATCH:
+     case OP_RE_NOMATCH:
+@@ -1273,14 +1200,6 @@ static void ns_filter(struct nodeset *ns, struct pred *predicates,
+     uint old_ctx_pos = state->ctx_pos;
+ 
+     for (int p=0; p < predicates->nexpr; p++) {
+-        if ( state->has_else) {
+-            for (int i=0; i < ns->used; i++) {
+-                /* 1st pass, check if any else statements have match on the left */
+-                /* Don't delete any nodes (yet) */
+-                state->ctx = ns->nodes[i];
+-                eval_pred(predicates->exprs[p], state);
+-            }
+-        }
+         int first_bad = -1;  /* The index of the first non-matching node */
+         state->ctx_len = ns->used;
+         state->ctx_pos = 1;
+@@ -1684,14 +1603,6 @@ static void check_binary(struct expr *expr, struct state *state) {
+         ok = 1;
+         res = T_BOOLEAN;
+         break;
+-    case OP_ELSE:
+-        if (l == T_NODESET && r == T_NODESET) {
+-            res = T_NODESET;
+-        } else {
+-            res = T_BOOLEAN;
+-        }
+-        ok = 1;
+-        break;
+     case OP_RE_MATCH:
+     case OP_RE_NOMATCH:
+         ok = ((l == T_STRING || l == T_NODESET) && r == T_REGEXP);
+@@ -1823,7 +1734,6 @@ static void push_new_binary_op(enum binary_op op, struct state *state) {
+     expr->op  = op;
+     expr->right = pop_expr(state);
+     expr->left = pop_expr(state);
+-    expr->left_matched = false;  /* for 'else' operator only, true if any matches on LHS */
+     push_expr(expr, state);
+ }
+ 
+@@ -1882,8 +1792,7 @@ static char *parse_name(struct state *state) {
+          * y' as one name, but for 'x or y', we consider 'x' a name in its
+          * own right. */
+         if (STREQLEN(state->pos, " or ", strlen(" or ")) ||
+-            STREQLEN(state->pos, " and ", strlen(" and ")) ||
+-            STREQLEN(state->pos, " else ", strlen(" else ")))
++            STREQLEN(state->pos, " and ", strlen(" and ")))
+             break;
+ 
+         if (*state->pos == '\\') {
+@@ -2558,28 +2467,11 @@ static void parse_or_expr(struct state *state) {
+ }
+ 
+ /*
+- * ElseExpr ::= OrExpr ('else' OrExpr)*
+- */
+-static void parse_else_expr(struct state *state) {
+-    parse_or_expr(state);
+-    RET_ON_ERROR;
+-    while (*state->pos == 'e' && state->pos[1] == 'l'
+-        && state->pos[2] == 's' && state->pos[3] == 'e' ) {
+-        state->pos += 4;
+-        skipws(state);
+-        parse_or_expr(state);
+-        RET_ON_ERROR;
+-        push_new_binary_op(OP_ELSE, state);
+-        state->has_else = 1;
+-    }
+-}
+-
+-/*
+- * Expr ::= ElseExpr
++ * Expr ::= OrExpr
+  */
+ static void parse_expr(struct state *state) {
+     skipws(state);
+-    parse_else_expr(state);
++    parse_or_expr(state);
+ }
+ 
+ static void store_error(struct pathx *pathx) {
+diff --git a/tests/run.tests b/tests/run.tests
+index 132b19b..7a9a2d9 100644
+--- a/tests/run.tests
++++ b/tests/run.tests
+@@ -296,36 +296,6 @@ test set-args 2
+   get /files
+ prints
+   /files (none)
+-
+-test set-union-not-there -1 EMMATCH
+-  set (/files/left|/files/right) 1
+-
+-test set-union-existing -1 EMMATCH
+-  set /files/left value1
+-  set /files/right value2
+-  set (/files/left|/files/right) 1
+-
+-test set-else-not-there 2
+-  set '(/files/not-there else /files/not-there-yet)' value
+-  get /files/not-there-yet
+-prints
+-  /files/not-there-yet = value
+-
+-test set-else-existing 3
+-  set /files/existing value
+-  set '(/files/existing else /files/not-there)' new_value
+-  get /files/existing
+-prints
+-  /files/existing = new_value
+-
+-test set-else-update 3
+-  set /files/existing value
+-  set '(/files/not-there else /files/existing)' value3
+-  get /files/existing
+-prints
+-  /files/existing = value3
+-
+-
+ #
+ # test clear
+ #
+diff --git a/tests/xpath.tests b/tests/xpath.tests
+index 4278e43..76cc7e0 100644
+--- a/tests/xpath.tests
++++ b/tests/xpath.tests
+@@ -278,16 +278,6 @@ test union (/files/etc/yum.conf | /files/etc/yum.repos.d/*)/*/gpgcheck
+      /files/etc/yum.repos.d/remi.repo/remi/gpgcheck = 1
+      /files/etc/yum.repos.d/remi.repo/remi-test/gpgcheck = 1
+ 
+-test else_nodeset_lhs (/files/etc/yum.conf else /files/etc/yum.repos.d/*)/*/gpgcheck
+-     /files/etc/yum.conf/main/gpgcheck = 1
+-
+-test else_nodeset_rhs (/files/etc/yum.conf.missing else /files/etc/yum.repos.d/fedora.repo)/*/gpgcheck
+-     /files/etc/yum.repos.d/fedora.repo/fedora/gpgcheck = 1
+-     /files/etc/yum.repos.d/fedora.repo/fedora-debuginfo/gpgcheck = 1
+-     /files/etc/yum.repos.d/fedora.repo/fedora-source/gpgcheck = 1
+-
+-test else_nodeset_nomatch (/files/left else /files/right)
+-
+ # Paths with whitespace in them
+ test php1 $php/mail function
+      /files/etc/php.ini/mail\ function
+@@ -358,35 +348,3 @@ test seqaxismatchlabel /files/etc/hosts/seq::2
+ 
+ test seqaxismatchregexp /files/etc/hosts/seq::*[canonical =~ regexp('.*orange.*')]
+      /files/etc/hosts/2
+-
+-test else_simple_lhs /files/etc/fstab/*[passno='1' else passno='2']/file
+-     /files/etc/fstab/1/file = /
+-
+-test else_simple_rhs /files/etc/fstab/*[passno='9' else passno='2']/file
+-     /files/etc/fstab/2/file = /boot
+-     /files/etc/fstab/5/file = /home
+-     /files/etc/fstab/8/file = /local
+-     /files/etc/fstab/9/file = /var/lib/xen/images
+-
+-test else_haschild_lhs /files/etc/hosts/*[alias else alias='orange']/canonical
+-     /files/etc/hosts/1/canonical = localhost.localdomain
+-     /files/etc/hosts/2/canonical = orange.watzmann.net
+-
+-test else_chain1 /files/etc/fstab/*[passno='9' else passno='1' else passno='2']/file
+-     /files/etc/fstab/1/file = /
+-
+-test else_chain2 /files/etc/fstab/*[passno='9' else passno='8' else passno='2']/file
+-     /files/etc/fstab/2/file = /boot
+-     /files/etc/fstab/5/file = /home
+-     /files/etc/fstab/8/file = /local
+-     /files/etc/fstab/9/file = /var/lib/xen/images
+-
+-# Although there are nodes matching passno=2 and nodes matching dump=0
+-# there is no node with both
+-test_and_else_lhs /files/etc/fstab/*[passno='2' and ( dump='0' else dump='1')]/file
+-
+-test_and_else_rhs /files/etc/fstab/*[passno='2' and ( dump='nemo' else dump='1')]/file
+-     /files/etc/fstab/2/file = /boot
+-     /files/etc/fstab/5/file = /home
+-     /files/etc/fstab/8/file = /local
+-     /files/etc/fstab/9/file = /var/lib/xen/images
+-- 
+2.27.0
+

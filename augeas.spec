@@ -1,6 +1,6 @@
 Name:               augeas
 Version:            1.13.0
-Release:            3
+Release:            4
 Summary:            Augeas is a configuration editing tool for changing configuration files
 License:            LGPLv2+
 URL:                https://augeas.net/
@@ -13,7 +13,7 @@ Provides:           augeas-libs = %{version}-%{release} augeas-libs%{?_isa} = %{
 Obsoletes:          augeas-libs < %{version}-%{release}
 
 Patch0001: 	    avoid-NULL-pointer-dereference-in-function-re_case_expand.patch
-
+Patch6000:	    backport-revert-add-else-operator-to-augeas-path-filter-expressions.patch
 %if "0%{?product_family}" != "0"
 Patch9000:          decrease-HASHCOUNT_T_MAX-to-avoid-the-OOM-during-the-Fuzz-test.patch
 %endif
@@ -103,6 +103,9 @@ make check
 %doc %{_mandir}/man1/au*.1.gz
 
 %changelog
+* Thu Jun 16 2022 wangkerong <wangkerong@h-partners.com> - 1.13.0-4
+- revert this patch,resolv use-after-free issue when fuzz test
+
 * Sat Apr 09 2022 wangkerong <wangkerong@huawei.com> - 1.13.0-3
 - Fix OOM during fuzz test
 - We don't run some testcase,because the patch of fuzz test will lead to the failure of testcase
