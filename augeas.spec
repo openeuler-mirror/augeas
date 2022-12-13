@@ -1,6 +1,6 @@
 Name:               augeas
 Version:            1.13.0
-Release:            4
+Release:            5
 Summary:            Augeas is a configuration editing tool for changing configuration files
 License:            LGPLv2+
 URL:                https://augeas.net/
@@ -17,6 +17,7 @@ Patch6000:	    backport-revert-add-else-operator-to-augeas-path-filter-expressio
 %if "0%{?product_family}" != "0"
 Patch9000:          decrease-HASHCOUNT_T_MAX-to-avoid-the-OOM-during-the-Fuzz-test.patch
 %endif
+Patch9001:          fix-segment-fault-when-use-augtool.patch
 
 %description
 Augeas is a configuration editing tool. It parses configuration files in their native
@@ -103,6 +104,9 @@ make check
 %doc %{_mandir}/man1/au*.1.gz
 
 %changelog
+* Tue Dec 13 2022 wangkerong <wangkerong@h-partners.com> - 1.13.0-5
+- fix segment fault when use augtool command
+
 * Thu Jun 16 2022 wangkerong <wangkerong@h-partners.com> - 1.13.0-4
 - revert this patch,resolv use-after-free issue when fuzz test
 
