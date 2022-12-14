@@ -1,0 +1,24 @@
+From f13e8f91110e1fa3dbd1e053c8f6ffee9e6cdd5d Mon Sep 17 00:00:00 2001
+From: wangkerong <wangkerong@h-partners.com>
+Date: Tue, 10 May 2022 14:35:21 +0800
+Subject: [PATCH] modify-augtool-err.patch
+
+---
+ src/get.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/src/get.c b/src/get.c
+index 94b9ba2..64dc5c1 100644
+--- a/src/get.c
++++ b/src/get.c
+@@ -455,6 +455,7 @@ static int match(struct state *state, struct lens *lens,
+     if (count < -1) {
+         regexp_match_error(state, lens, count, re);
+         FREE(regs);
++        FREE(re->re);
+         return -1;
+     }
+     state->regs = regs;
+-- 
+2.27.0
+
