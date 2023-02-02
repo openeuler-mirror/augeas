@@ -1,10 +1,10 @@
 Name:               augeas
-Version:            1.13.0
-Release:            5
+Version:            1.14.0
+Release:            1
 Summary:            Augeas is a configuration editing tool for changing configuration files
 License:            LGPLv2+
 URL:                https://augeas.net/
-Source0:            https://github.com/hercules-team/augeas/archive/refs/tags/release-%{version}.tar.gz#/%{name}-%{version}.tar.gz
+Source0:            https://github.com/hercules-team/augeas/releases/download/release-%{version}/%{name}-%{version}.tar.gz
 
 BuildRequires:      gcc libselinux-devel libxml2-devel readline-devel 
 BuildRequires:      autoconf automake libtool git gnulib flex
@@ -43,12 +43,11 @@ Provide header files and libraries for the use of building a extension library f
 %package_help
 
 %prep
-%autosetup -n %{name}-release-%{version} -p1
+%autosetup -n %{name}-%{version} -p1
 
 %build
 git init
-cp /usr/bin/gnulib-tool %{_builddir}/%{name}-release-%{version}/.gnulib
-./autogen.sh
+cp /usr/bin/gnulib-tool %{_builddir}/%{name}-%{version}/.gnulib
 %configure
 %make_build -j1
 
@@ -102,8 +101,12 @@ make check
 %defattr(-,root,root)
 %doc NEWS
 %doc %{_mandir}/man1/au*.1.gz
+%doc %{_datadir}/bash-completion/completions/aug*
 
 %changelog
+* Thu Feb 02 2023 zhouwenpei <zhouwenpei1@h-partners.com> - 1.14.0-1
+- update to 1.14.0
+
 * Tue Dec 13 2022 wangkerong <wangkerong@h-partners.com> - 1.13.0-5
 - fix segment fault when use augtool command
 
